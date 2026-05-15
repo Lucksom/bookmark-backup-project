@@ -1,6 +1,5 @@
 {
   "manifest_version": 2,
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx6XVXrmi+T3yki2QvJFZqZJB1+S04ulcfGj5NTJpk/KSr5D+hprGhEI121F3jGWcoNvuxJo0h0FUvhppudMSQTmrWv9h28QmaJXs7sjNwSBL++IbQjFVFsN7fqeg7povWASKJmL0MmeL3YwfkOpw3PHWkL/E598UGZCR2MZrLRIiBETScquM4o5rGTTWY2UOMK9sDAVobH5rjgHgrVglRxb1W2S/Gr3V3vrsZzC0g03sXmuLQ1JQ8BMZEsmsO6pftrpr1gkGP3+Uzmu/WDw8ZWNkQQIlayRaOkyCN+Gud6QOsvSqhGIFdUueH5ZU7JzmFOUa78wjAfNjQowaTU2jBQIDAQAB",
   "name": "Bookmark Cloud Backup (Legacy)",
   "version": "1.0",
   "description": "Backup and restore bookmarks to Google Drive or offline files.",
