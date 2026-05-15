@@ -1,3 +1,5 @@
+importScripts('shared-scripts/auth.js', 'shared-scripts/drive.js', 'shared-scripts/bookmarks.js');
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Background received message:", request.action);
 
