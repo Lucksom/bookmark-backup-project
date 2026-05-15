@@ -1,11 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
-  const googleBtn = document.getElementById('google-btn');
-  const statusText = document.getElementById('status');
+  const googleBtn = document.getElementById('btn-login'); 
+  const statusText = document.getElementById('status-text'); 
 
   if (googleBtn) {
     googleBtn.addEventListener('click', function() {
       if (statusText) statusText.textContent = "Connecting to Google...";
-      console.log("Login button clicked, sending message to background...");
 
       chrome.runtime.sendMessage({ action: 'login' }, function(response) {
         
@@ -19,7 +18,8 @@ document.addEventListener('DOMContentLoaded', function() {
           console.log("Login Success! Token:", response.token);
           if (statusText) statusText.textContent = "Connected successfully!";
           
-          chrome.runtime.sendMessage({ action: 'startBackup' });
+          document.getElementById('btn-backup-drive').disabled = false;
+          document.getElementById('btn-restore-drive').disabled = false;
 
         } else {
           const errorMsg = response ? response.error : "Unknown Error";
@@ -29,6 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   } else {
-    console.error("Error: Could not find the button. Make sure your HTML has id='google-btn'");
+    console.error("Error: Could not find the button. Check HTML IDs.");
   }
 });
