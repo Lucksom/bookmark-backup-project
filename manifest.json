@@ -1,6 +1,6 @@
 {
-  "manifest_version": 2,
-  "name": "Bookmark Cloud Backup (Legacy)",
+  "manifest_version": 3,
+  "name": "Bookmark Cloud Backup",
   "version": "1.0",
   "description": "Backup and restore bookmarks to Google Drive or offline files.",
   "permissions": [
@@ -8,10 +8,12 @@
     "identity",
     "storage",
     "downloads",
-    "alarms",
+    "alarms"
+  ],
+  "host_permissions": [
     "https://*.googleapis.com/*"
   ],
-  "browser_action": {
+  "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "icon.png",
@@ -20,13 +22,7 @@
     }
   },
   "background": {
-    "scripts": [
-      "shared-scripts/auth.js",
-      "shared-scripts/drive.js",
-      "shared-scripts/bookmarks.js",
-      "background.js"
-    ],
-    "persistent": false
+    "service_worker": "background.js"
   },
   "oauth2": {
     "client_id": "893630697154-hip70mbn0l83r8gb8u3samhj5h4gku0l.apps.googleusercontent.com",
