@@ -17,9 +17,14 @@
             <button id="btn-login" class="material-btn primary">Login with Google</button>
             <button id="btn-backup-drive" class="material-btn" disabled>Backup to Drive</button>
             
-            <select id="backup-list" class="material-btn" style="display: none; background: rgba(255,255,255,0.9); color: #1f2937; padding: 0 12px; font-size: 0.85rem; text-align: center;"></select>
+            <hr>
             
-            <button id="btn-restore-drive" class="material-btn" disabled>Restore from Drive</button>
+            <select id="backup-list" class="material-btn" style="display: none; background: rgba(255,255,255,0.9); color: #1f2937; padding: 0 12px; font-size: 0.85rem; text-align: center; margin-bottom: 4px;"></select>
+            
+            <div id="manage-group" style="display: none; gap: 8px;">
+                <button id="btn-restore-drive" class="material-btn" style="flex: 1; padding: 0;">Restore</button>
+                <button id="btn-delete-drive" class="material-btn" style="flex: 1; padding: 0; background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">Delete</button>
+            </div>
             
             <hr>
             
