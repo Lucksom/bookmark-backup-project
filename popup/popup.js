@@ -6,6 +6,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const statusText = document.getElementById('status-text');
   const backupList = document.getElementById('backup-list');
   const manageGroup = document.getElementById('manage-group');
+  
+  const btnExport = document.getElementById('btn-export-local');
+  const btnImport = document.getElementById('btn-import-local');
+  const fileImport = document.getElementById('file-import-local');
 
   chrome.storage.local.get(['drive_token'], function(result) {
       if (result.drive_token) {
@@ -95,7 +99,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  // NEW: Delete button logic
   if (btnDelete) {
       btnDelete.addEventListener('click', function() {
           const fileId = backupList.value;
@@ -111,13 +114,80 @@ document.addEventListener('DOMContentLoaded', function() {
           chrome.runtime.sendMessage({ action: 'deleteBackup', fileId: fileId }, function(response) {
               if (response && response.success) {
                   statusText.textContent = "Success: Backup deleted!";
-                  setConnectedUI(); // Refresh the list
+                  setConnectedUI(); 
               } else {
                   statusText.textContent = "Delete Error: " + (response ? response.error : "Failed");
                   btnRestore.disabled = false;
                   btnDelete.disabled = false;
               }
           });
+      });
+  }
+
+  // FIXED: Mobile-Friendly Offline Export
+  if (btnExport) {
+      btnExport.addEventListener('click', function() {
+          statusText.textContent = "Progress: Exporting offline...";
+          chrome.bookmarks.getTree(function(tree) {
+              try {
+                  const json = JSON.stringify(tree, null, 2);
+                  const blob = new Blob([json], {type: "application/json"});
+                  const url = URL.createObjectURL(blob);
+                  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                  
+                  // Use native HTML5 download (bypasses mobile extension API limits)
+                  const a = document.createElement('a');
+                  a.style.display = 'none';
+                  a.href = url;
+                  a.download = `bookmarks-offline-${timestamp}.json`;
+                  document.body.appendChild(a);
+                  a.click();
+                  
+                  setTimeout(() => {
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                  }, 100);
+                  
+                  statusText.textContent = "Success: Bookmarks exported!";
+              } catch (error) {
+                  statusText.textContent = "Export Error: " + error.message;
+              }
+          });
+      });
+  }
+
+  // Offline Import Logic
+  if (btnImport && fileImport) {
+      btnImport.addEventListener('click', function() {
+          fileImport.click(); 
+      });
+
+      fileImport.addEventListener('change', function(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          statusText.textContent = "Progress: Reading file...";
+          
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              try {
+                  const bookmarkData = JSON.parse(e.target.result);
+                  statusText.textContent = "Progress: Restoring offline data...";
+                  
+                  chrome.runtime.sendMessage({ action: 'restoreLocal', data: bookmarkData }, function(response) {
+                      if (response && response.success) {
+                          statusText.textContent = "Success: Offline bookmarks restored!";
+                      } else {
+                          statusText.textContent = "Restore Error: " + (response ? response.error : "Failed");
+                      }
+                      fileImport.value = ''; 
+                  });
+              } catch (error) {
+                  statusText.textContent = "Error: Invalid JSON file format.";
+                  fileImport.value = ''; 
+              }
+          };
+          reader.readAsText(file);
       });
   }
 });
