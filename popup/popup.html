@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="popup.css">
+    <title>Bookmark Cloud</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Bookmark Cloud</h1>
+            <p class="status" id="status-text">Not logged in</p>
+        </header>
+        
+        <div class="action-grid">
+            <button id="btn-login" class="material-btn primary">Login with Google</button>
+            <button id="btn-backup-drive" class="material-btn" disabled>Backup to Drive</button>
+            <button id="btn-restore-drive" class="material-btn" disabled>Restore from Drive</button>
+            
+            <hr>
+            
+            <button id="btn-export-local" class="material-btn secondary">Export Offline (.json)</button>
+            
+            <!-- Hidden input for file selection -->
+            <input type="file" id="file-import-local" accept=".json" style="display: none;">
+            <button id="btn-import-local" class="material-btn secondary">Import Offline</button>
+        </div>
+    </div>
+    
+    <!-- We will write this next -->
+    <script src="popup.js"></script>
+</body>
+</html>
