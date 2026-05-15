@@ -3,8 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="popup.css">
     <title>Bookmark Cloud</title>
+    <style>
+        :root {
+            --surface-color: rgba(255, 255, 255, 0.6);
+            --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            --text-main: #1f2937;
+            --primary: #0b57d0;
+            --radius-container: 16px;
+            --radius-btn: 24px;
+        }
+        body {
+            width: 320px;
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: var(--surface-color);
+            backdrop-filter: blur(12px);
+            border-radius: var(--radius-container);
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { font-size: 1.3rem; margin: 0 0 4px 0; font-weight: 600; }
+        .status { font-size: 0.85rem; color: #4b5563; margin: 0; font-weight: 500; }
+        .action-grid { display: flex; flex-direction: column; gap: 12px; }
+        .material-btn {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: var(--radius-btn);
+            padding: 0 16px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 44px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .material-btn.primary { background: var(--primary); color: white; border: none; }
+        .material-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        hr { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0; width: 100%; }
+        #manage-group { display: flex; gap: 8px; width: 100%; }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -19,11 +70,11 @@
             
             <hr>
             
-            <select id="backup-list" class="material-btn" style="display: none; background: rgba(255,255,255,0.9); color: #1f2937; padding: 0 12px; font-size: 0.85rem; text-align: center; margin-bottom: 4px;"></select>
+            <select id="backup-list" class="material-btn" style="display: none; background: rgba(255,255,255,0.9); font-size: 0.85rem;"></select>
             
-            <div id="manage-group" style="display: none; gap: 8px;">
-                <button id="btn-restore-drive" class="material-btn" style="flex: 1; padding: 0;">Restore</button>
-                <button id="btn-delete-drive" class="material-btn" style="flex: 1; padding: 0; background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">Delete</button>
+            <div id="manage-group" style="display: none;">
+                <button id="btn-restore-drive" class="material-btn">Restore</button>
+                <button id="btn-delete-drive" class="material-btn" style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">Delete</button>
             </div>
             
             <hr>
