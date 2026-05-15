@@ -7,15 +7,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Packer
-        run: npm install -g crx
-
-      - name: Pack CRX
+      - name: Build Extension
         env:
           MY_KEY: ${{ secrets.EXTENSION_KEY }}
         run: |
           echo "$MY_KEY" > key.pem
-          crx pack . --key key.pem --output extension.crx
+          npx crx pack . -p key.pem -o extension.crx
           zip -r extension.zip . -x "*.git*" ".github*" "key.pem"
           rm key.pem
 
