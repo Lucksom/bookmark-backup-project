@@ -2,19 +2,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log("Background received message:", request.action);
 
   if (request.action === 'login') {
-    console.log("Starting Google Auth flow...");
+    console.log("Starting Web Auth flow...");
     
-    chrome.identity.getAuthToken({ interactive: true }, function(token) {
-      if (chrome.runtime.lastError) {
-        console.error("Auth Error:", chrome.runtime.lastError.message);
-        sendResponse({ success: false, error: chrome.runtime.lastError.message });
-      } else if (token) {
-        console.log("Auth Successful! Token retrieved.");
-        sendResponse({ success: true, token: token });
+    Auth.login().then((result) => {
+      if (result && result.success) {
+         console.log("Auth Successful! Token retrieved.");
+         sendResponse({ success: true, token: result.token });
       } else {
-        console.error("Auth Failed: No token returned.");
-        sendResponse({ success: false, error: "No token returned." });
+         console.error("Auth Failed or canceled by user.");
+         sendResponse({ success: false, error: "Web Auth flow failed or was canceled." });
       }
+    }).catch(err => {
+      console.error("Auth Exception:", err);
+      sendResponse({ success: false, error: err.toString() });
     });
 
     return true; 
