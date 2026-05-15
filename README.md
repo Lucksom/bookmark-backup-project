@@ -1,2 +1,3 @@
-# bookmark-backup-project
-​A browser extension to securely backup and restore your bookmarks to Google Drive using the Drive API. Built with JavaScript and Manifest V2 and v3. 
+​Bookmark Cloud Backup
+​Privacy Policy
+​This extension only accesses your Google Drive to save and restore your own bookmark backups. We do not collect, store, or share any personal data or browsing history with third parties.
