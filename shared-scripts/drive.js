@@ -1,5 +1,6 @@
 const Drive = {
     API_BASE: 'https://www.googleapis.com/drive/v3',
+    UPLOAD_BASE: 'https://www.googleapis.com/upload/drive/v3', // Corrected upload endpoint
     BACKUP_FOLDER_NAME: 'ChromeBookmarkBackups',
     BACKUP_FILE_PREFIX: 'bookmarks-backup-',
 
@@ -20,7 +21,10 @@ const Drive = {
             })
         });
 
-        if (!response.ok) throw new Error(`Failed to create folder`);
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(`Folder creation failed: ${errData.error?.message || response.statusText}`);
+        }
         const data = await response.json();
         return data.id;
     },
@@ -30,7 +34,10 @@ const Drive = {
         const response = await fetch(`${Drive.API_BASE}/files?q=${query}&spaces=drive&pageSize=1&fields=files(id,name)`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Failed to search for folder');
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(`Search failed: ${errData.error?.message || response.statusText}`);
+        }
         const data = await response.json();
         return data.files.length > 0 ? data.files[0].id : null;
     },
@@ -41,7 +48,7 @@ const Drive = {
 
         const folderId = await Drive.ensureBackupFolder();
 
-        // NEW: Delete existing backup files first so we only keep 1 updated file!
+        // Clear existing backups to maintain only the latest one
         try {
             const oldFiles = await Drive.listBackups();
             for (const file of oldFiles) {
@@ -65,7 +72,8 @@ const Drive = {
             delimiter + 'Content-Type: application/json\r\n\r\n' +
             JSON.stringify(bookmarkData) + closeDelimiter;
 
-        const response = await fetch(`${Drive.API_BASE}/files?uploadType=multipart&supportsAllDrives=true`, {
+        // Use the specific /upload/ endpoint required by Google
+        const response = await fetch(`${Drive.UPLOAD_BASE}/files?uploadType=multipart&supportsAllDrives=true`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -74,7 +82,15 @@ const Drive = {
             body: body
         });
 
-        if (!response.ok) throw new Error(`Upload failed`);
+        // Fixed error handling to show EXACT reason
+        if (!response.ok) {
+            if (response.status === 401) {
+                await Auth.logout(); // Erase the expired token
+                throw new Error("Session expired. Please click Login again.");
+            }
+            const errData = await response.json();
+            throw new Error(errData.error?.message || "Google API rejected the upload");
+        }
         const data = await response.json();
         return data.id;
     },
