@@ -38,10 +38,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  // NEW: Handle the delete command
   if (request.action === 'deleteBackup') {
     Drive.deleteBackup(request.fileId)
       .then(() => sendResponse({ success: true }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
+
+  if (request.action === 'restoreLocal') {
+    Bookmarks.restore(request.data)
+      .then(result => sendResponse(result))
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
