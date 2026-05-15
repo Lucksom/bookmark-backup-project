@@ -1,0 +1,107 @@
+:root {
+    --surface-color: rgba(255, 255, 255, 0.6);
+    --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    --text-main: #1f2937;
+    --primary: #0b57d0;
+    --primary-hover: #0842a0;
+    --radius-container: 16px;
+    --radius-btn: 24px;
+}
+
+body {
+    width: 320px;
+    margin: 0;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.container {
+    background: var(--surface-color);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: var(--radius-container);
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 1.3rem;
+    margin: 0 0 4px 0;
+    font-weight: 600;
+}
+
+.status {
+    font-size: 0.85rem;
+    color: #4b5563;
+    margin: 0;
+    font-weight: 500;
+}
+
+.action-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.material-btn {
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: var(--radius-btn);
+    padding: 0 16px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 44px; /* Mobile touch target size */
+}
+
+.material-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.material-btn.primary {
+    background: var(--primary);
+    color: white;
+    border: none;
+    box-shadow: 0 2px 8px rgba(11, 87, 208, 0.3);
+}
+
+.material-btn.primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+}
+
+.material-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    margin: 4px 0;
+}
+
+.icon {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    margin-right: 8px;
+}
