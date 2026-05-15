@@ -1,0 +1,28 @@
+name: Build and Sign Extension
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Packer
+        run: npm install -g crx
+
+      - name: Pack CRX
+        env:
+          MY_KEY: ${{ secrets.EXTENSION_KEY }}
+        run: |
+          echo "$MY_KEY" > key.pem
+          crx pack . --key key.pem --output extension.crx
+          zip -r extension.zip . -x "*.git*" ".github*" "key.pem"
+          rm key.pem
+
+      - name: Upload Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-extension
+          path: |
+            extension.crx
+            extension.zip
