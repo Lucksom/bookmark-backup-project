@@ -1,47 +1,28 @@
-const Bookmarks = {
-    getTree: () => {
-        return new Promise((resolve) => {
-            chrome.bookmarks.getTree((tree) => {
-                resolve(tree);
-            });
-        });
-    },
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("Background received message:", request.action);
 
-    restore: async (bookmarkData) => {
-        try {
+  if (request.action === 'login') {
+    console.log("Starting Google Auth flow...");
+    
+    chrome.identity.getAuthToken({ interactive: true }, function(token) {
+      if (chrome.runtime.lastError) {
+        console.error("Auth Error:", chrome.runtime.lastError.message);
+        sendResponse({ success: false, error: chrome.runtime.lastError.message });
+      } else if (token) {
+        console.log("Auth Successful! Token retrieved.");
+        sendResponse({ success: true, token: token });
+      } else {
+        console.error("Auth Failed: No token returned.");
+        sendResponse({ success: false, error: "No token returned." });
+      }
+    });
 
-            const timestamp = new Date().toLocaleString();
-            const rootFolder = await new Promise((resolve) => {
-                chrome.bookmarks.create({
-                    title: `Restored Backup (${timestamp})`
-                }, resolve);
-            });
+    return true; 
+  }
 
-            const nodes = bookmarkData[0].children;
-            for (const node of nodes) {
-                await Bookmarks.recursivelyCreate(rootFolder.id, node);
-            }
-            return { success: true };
-        } catch (error) {
-            console.error("Restore error:", error);
-            return { success: false, error: error.message };
-        }
-    },
-
-    recursivelyCreate: async (parentId, node) => {
-
-        const createdNode = await new Promise((resolve) => {
-            chrome.bookmarks.create({
-                parentId: parentId,
-                title: node.title,
-                url: node.url 
-            }, resolve);
-        });
-
-        if (node.children && node.children.length > 0) {
-            for (const child of node.children) {
-                await Bookmarks.recursivelyCreate(createdNode.id, child);
-            }
-        }
-    }
-};
+  if (request.action === 'startBackup') {
+    console.log("Starting backup process...");
+    sendResponse({ success: true, message: "Backup process started in background." });
+    return true; 
+  }
+});
