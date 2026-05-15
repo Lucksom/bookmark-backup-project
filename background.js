@@ -37,4 +37,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .catch(err => sendResponse({ success: false, error: err.message }));
     return true;
   }
+
+  // NEW: Handle the delete command
+  if (request.action === 'deleteBackup') {
+    Drive.deleteBackup(request.fileId)
+      .then(() => sendResponse({ success: true }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
+    return true;
+  }
 });
