@@ -1,8 +1,16 @@
-name: Build Extension
+name: Build and Release Extension
 
+# This triggers ONLY when you publish a new Release on GitHub
 on:
-  push:
-    branches: [ "main" ] # This forces it to build on EVERY single save/commit
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+# This silences that annoying Node 20 warning
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -22,10 +30,9 @@ jobs:
           crxFilePath: 'Bookmark.crx'
           privateKey: ${{ secrets.EXTENSION_KEY }}
 
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Files to the Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: signed-extension
-          path: |
+          files: |
             Bookmark.zip
             Bookmark.crx
