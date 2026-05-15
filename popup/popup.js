@@ -1,30 +1,25 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Find the button in your popup.html
   const googleBtn = document.getElementById('google-btn');
-  const statusText = document.getElementById('status'); // Optional: if you have a <p id="status"></p>
+  const statusText = document.getElementById('status');
 
   if (googleBtn) {
     googleBtn.addEventListener('click', function() {
       if (statusText) statusText.textContent = "Connecting to Google...";
       console.log("Login button clicked, sending message to background...");
 
-      // Send the message to background.js
       chrome.runtime.sendMessage({ action: 'login' }, function(response) {
         
-        // 1. Check for system connection errors (Fixes: "Receiving end does not exist")
         if (chrome.runtime.lastError) {
           console.error("Connection Error:", chrome.runtime.lastError.message);
           if (statusText) statusText.textContent = "Error: Connection failed.";
           return;
         }
 
-        // 2. Check the response safely (Fixes: "Cannot read properties of undefined")
         if (response && response.success) {
           console.log("Login Success! Token:", response.token);
           if (statusText) statusText.textContent = "Connected successfully!";
           
-          // You can automatically trigger a backup here if you want
-          // chrome.runtime.sendMessage({ action: 'startBackup' });
+          chrome.runtime.sendMessage({ action: 'startBackup' });
 
         } else {
           const errorMsg = response ? response.error : "Unknown Error";
