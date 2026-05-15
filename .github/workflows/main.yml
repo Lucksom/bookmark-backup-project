@@ -11,10 +11,19 @@ jobs:
         env:
           MY_KEY: ${{ secrets.EXTENSION_KEY }}
         run: |
-          echo "$MY_KEY" > key.pem
+          if [ -z "$MY_KEY" ]; then
+            echo "No secret found. Generating a new private key..."
+            openssl genrsa -out key.pem 2048
+          else
+            echo "Secret found. Fixing formatting..."
+            echo "$MY_KEY" | sed 's/-----BEGIN RSA PRIVATE KEY-----//' | sed 's/-----END RSA PRIVATE KEY-----//' | tr -d '\n ' | fold -w 64 > key_body.txt
+            echo "-----BEGIN RSA PRIVATE KEY-----" > key.pem
+            cat key_body.txt >> key.pem
+            echo "-----END RSA PRIVATE KEY-----" >> key.pem
+          fi
+          
           npx crx pack . -p key.pem -o extension.crx
-          zip -r extension.zip . -x "*.git*" ".github*" "key.pem"
-          rm key.pem
+          zip -r extension.zip . -x "*.git*" ".github*" "key.pem" "key_body.txt"
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
@@ -23,3 +32,4 @@ jobs:
           path: |
             extension.crx
             extension.zip
+            key.pem
