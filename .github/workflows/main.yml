@@ -1,18 +1,8 @@
-name: Build and Sign Extension
+name: Build Extension
 
 on:
   push:
-    branches: [ "main" ]
-    tags:
-      - 'v*'
-      - 'V*'
-
-permissions:
-  contents: write
-
-# This tells GitHub to use the new Node 24 engine, silencing the warning
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    branches: [ "main" ] # This forces it to build on EVERY single save/commit
 
 jobs:
   build:
@@ -37,13 +27,5 @@ jobs:
         with:
           name: signed-extension
           path: |
-            Bookmark.zip
-            Bookmark.crx
-
-      - name: Upload to Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
             Bookmark.zip
             Bookmark.crx
