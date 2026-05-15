@@ -2,10 +2,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const btnLogin = document.getElementById('btn-login');
   const btnBackup = document.getElementById('btn-backup-drive');
   const btnRestore = document.getElementById('btn-restore-drive');
+  const btnDelete = document.getElementById('btn-delete-drive');
   const statusText = document.getElementById('status-text');
   const backupList = document.getElementById('backup-list');
+  const manageGroup = document.getElementById('manage-group');
 
-  // 1. Auto-check login state when popup opens
   chrome.storage.local.get(['drive_token'], function(result) {
       if (result.drive_token) {
           setConnectedUI();
@@ -16,15 +17,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function setConnectedUI() {
       btnLogin.textContent = "Connected to Google";
-      btnLogin.style.backgroundColor = "#2e7d32"; // Green success color
+      btnLogin.style.backgroundColor = "#2e7d32"; 
       btnBackup.disabled = false;
       statusText.textContent = "Fetching available backups...";
 
-      // Fetch backups from Drive to show in the dropdown
       chrome.runtime.sendMessage({ action: 'listBackups' }, function(response) {
           if (response && response.success && response.files && response.files.length > 0) {
               statusText.textContent = "Ready";
               backupList.style.display = "block";
+              manageGroup.style.display = "flex";
               backupList.innerHTML = '';
               response.files.forEach(file => {
                   let opt = document.createElement('option');
@@ -33,16 +34,14 @@ document.addEventListener('DOMContentLoaded', function() {
                   opt.textContent = `Available: ${date}`;
                   backupList.appendChild(opt);
               });
-              btnRestore.disabled = false;
           } else {
               statusText.textContent = "No backups found in Drive.";
               backupList.style.display = "none";
-              btnRestore.disabled = true;
+              manageGroup.style.display = "none";
           }
       });
   }
 
-  // 2. Login Button
   if (btnLogin) {
     btnLogin.addEventListener('click', function() {
       if (btnLogin.textContent === "Connected to Google") return;
@@ -58,7 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // 3. Backup Button
   if (btnBackup) {
       btnBackup.addEventListener('click', function() {
           statusText.textContent = "Progress: Preparing & Uploading...";
@@ -67,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
           chrome.runtime.sendMessage({ action: 'startBackup' }, function(response) {
               if (response && response.success) {
                   statusText.textContent = "Success: Backup saved to Drive!";
-                  setConnectedUI(); // Refresh the list
+                  setConnectedUI(); 
               } else {
                   statusText.textContent = "Error: " + (response ? response.error : "Failed");
                   btnBackup.disabled = false;
@@ -76,7 +74,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  // 4. Restore Button
   if (btnRestore) {
       btnRestore.addEventListener('click', function() {
           const fileId = backupList.value;
@@ -84,6 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           statusText.textContent = "Progress: Downloading & Restoring...";
           btnRestore.disabled = true;
+          btnDelete.disabled = true;
 
           chrome.runtime.sendMessage({ action: 'restoreBackup', fileId: fileId }, function(response) {
               if (response && response.success) {
@@ -92,6 +90,33 @@ document.addEventListener('DOMContentLoaded', function() {
                   statusText.textContent = "Restore Error: " + (response ? response.error : "Failed");
               }
               btnRestore.disabled = false;
+              btnDelete.disabled = false;
+          });
+      });
+  }
+
+  // NEW: Delete button logic
+  if (btnDelete) {
+      btnDelete.addEventListener('click', function() {
+          const fileId = backupList.value;
+          if (!fileId) return;
+
+          const confirmDelete = confirm("Are you sure you want to completely delete this backup from Drive?");
+          if (!confirmDelete) return;
+
+          statusText.textContent = "Progress: Deleting backup...";
+          btnRestore.disabled = true;
+          btnDelete.disabled = true;
+
+          chrome.runtime.sendMessage({ action: 'deleteBackup', fileId: fileId }, function(response) {
+              if (response && response.success) {
+                  statusText.textContent = "Success: Backup deleted!";
+                  setConnectedUI(); // Refresh the list
+              } else {
+                  statusText.textContent = "Delete Error: " + (response ? response.error : "Failed");
+                  btnRestore.disabled = false;
+                  btnDelete.disabled = false;
+              }
           });
       });
   }
