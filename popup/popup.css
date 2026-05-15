@@ -1,107 +1,181 @@
-:root {
-    --surface-color: rgba(255, 255, 255, 0.6);
-    --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
-    --text-main: #1f2937;
-    --primary: #0b57d0;
-    --primary-hover: #0842a0;
-    --radius-container: 16px;
-    --radius-btn: 24px;
-}
+document.addEventListener('DOMContentLoaded', function() {
+  const btnLogin = document.getElementById('btn-login');
+  const btnBackup = document.getElementById('btn-backup-drive');
+  const btnRestore = document.getElementById('btn-restore-drive');
+  const btnDelete = document.getElementById('btn-delete-drive');
+  const statusText = document.getElementById('status-text');
+  const backupList = document.getElementById('backup-list');
+  const manageGroup = document.getElementById('manage-group');
+  
+  const btnExport = document.getElementById('btn-export-local');
+  const btnImport = document.getElementById('btn-import-local');
+  const fileImport = document.getElementById('file-import-local');
 
-body {
-    width: 320px;
-    margin: 0;
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg-gradient);
-    color: var(--text-main);
-    padding: 16px;
-    box-sizing: border-box;
-}
+  chrome.storage.local.get(['drive_token'], function(result) {
+      if (result.drive_token) {
+          setConnectedUI();
+      } else {
+          statusText.textContent = "Not logged in";
+      }
+  });
 
-.container {
-    background: var(--surface-color);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: var(--radius-container);
-    padding: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-}
+  function setConnectedUI() {
+      btnLogin.textContent = "Connected to Google";
+      btnLogin.style.backgroundColor = "#2e7d32"; 
+      btnBackup.disabled = false;
+      statusText.textContent = "Fetching available backups...";
 
-header {
-    text-align: center;
-    margin-bottom: 20px;
-}
+      chrome.runtime.sendMessage({ action: 'listBackups' }, function(response) {
+          if (response && response.success && response.files && response.files.length > 0) {
+              statusText.textContent = "Ready";
+              backupList.style.display = "block";
+              manageGroup.style.display = "flex";
+              backupList.innerHTML = '';
+              response.files.forEach(file => {
+                  let opt = document.createElement('option');
+                  opt.value = file.id;
+                  let date = new Date(file.createdTime).toLocaleString();
+                  opt.textContent = `Available: ${date}`;
+                  backupList.appendChild(opt);
+              });
+          } else {
+              statusText.textContent = "No backups found in Drive.";
+              backupList.style.display = "none";
+              manageGroup.style.display = "none";
+          }
+      });
+  }
 
-h1 {
-    font-size: 1.3rem;
-    margin: 0 0 4px 0;
-    font-weight: 600;
-}
+  if (btnLogin) {
+    btnLogin.addEventListener('click', function() {
+      if (btnLogin.textContent === "Connected to Google") return;
+      statusText.textContent = "Opening Google Login...";
 
-.status {
-    font-size: 0.85rem;
-    color: #4b5563;
-    margin: 0;
-    font-weight: 500;
-}
+      chrome.runtime.sendMessage({ action: 'login' }, function(response) {
+        if (response && response.success) {
+            setConnectedUI();
+        } else {
+            statusText.textContent = "Login Failed: " + (response ? response.error : "Canceled");
+        }
+      });
+    });
+  }
 
-.action-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
+  if (btnBackup) {
+      btnBackup.addEventListener('click', function() {
+          statusText.textContent = "Progress: Preparing & Uploading...";
+          btnBackup.disabled = true;
+          
+          chrome.runtime.sendMessage({ action: 'startBackup' }, function(response) {
+              if (response && response.success) {
+                  statusText.textContent = "Success: Backup saved to Drive!";
+                  setConnectedUI(); 
+              } else {
+                  statusText.textContent = "Error: " + (response ? response.error : "Failed");
+                  btnBackup.disabled = false;
+              }
+          });
+      });
+  }
 
-.material-btn {
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: var(--radius-btn);
-    padding: 0 16px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--text-main);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 44px; /* Mobile touch target size */
-}
+  if (btnRestore) {
+      btnRestore.addEventListener('click', function() {
+          const fileId = backupList.value;
+          if (!fileId) return;
 
-.material-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.95);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
+          statusText.textContent = "Progress: Downloading & Restoring...";
+          btnRestore.disabled = true;
+          btnDelete.disabled = true;
 
-.material-btn.primary {
-    background: var(--primary);
-    color: white;
-    border: none;
-    box-shadow: 0 2px 8px rgba(11, 87, 208, 0.3);
-}
+          chrome.runtime.sendMessage({ action: 'restoreBackup', fileId: fileId }, function(response) {
+              if (response && response.success) {
+                  statusText.textContent = "Success: Bookmarks restored!";
+              } else {
+                  statusText.textContent = "Restore Error: " + (response ? response.error : "Failed");
+              }
+              btnRestore.disabled = false;
+              btnDelete.disabled = false;
+          });
+      });
+  }
 
-.material-btn.primary:hover:not(:disabled) {
-    background: var(--primary-hover);
-}
+  if (btnDelete) {
+      btnDelete.addEventListener('click', function() {
+          const fileId = backupList.value;
+          if (!fileId) return;
 
-.material-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    box-shadow: none;
-    transform: none;
-}
+          const confirmDelete = confirm("Are you sure you want to completely delete this backup from Drive?");
+          if (!confirmDelete) return;
 
-hr {
-    border: none;
-    border-top: 1px solid rgba(0,0,0,0.1);
-    margin: 4px 0;
-}
+          statusText.textContent = "Progress: Deleting backup...";
+          btnRestore.disabled = true;
+          btnDelete.disabled = true;
 
-.icon {
-    width: 36px;
-    height: 36px;
-    object-fit: contain;
-    margin-right: 8px;
-}
+          chrome.runtime.sendMessage({ action: 'deleteBackup', fileId: fileId }, function(response) {
+              if (response && response.success) {
+                  statusText.textContent = "Success: Backup deleted!";
+                  setConnectedUI(); 
+              } else {
+                  statusText.textContent = "Delete Error: " + (response ? response.error : "Failed");
+                  btnRestore.disabled = false;
+                  btnDelete.disabled = false;
+              }
+          });
+      });
+  }
+
+  if (btnExport) {
+      btnExport.addEventListener('click', function() {
+          statusText.textContent = "Progress: Exporting offline...";
+          chrome.bookmarks.getTree(function(tree) {
+              const json = JSON.stringify(tree, null, 2);
+              const blob = new Blob([json], {type: "application/json"});
+              const url = URL.createObjectURL(blob);
+              const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+              
+              chrome.downloads.download({
+                  url: url,
+                  filename: `bookmarks-offline-${timestamp}.json`,
+                  saveAs: true
+              }, function() {
+                  statusText.textContent = "Success: Bookmarks exported!";
+                  URL.revokeObjectURL(url);
+              });
+          });
+      });
+  }
+
+  if (btnImport && fileImport) {
+      btnImport.addEventListener('click', function() {
+          fileImport.click(); 
+      });
+
+      fileImport.addEventListener('change', function(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          statusText.textContent = "Progress: Reading file...";
+          
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              try {
+                  const bookmarkData = JSON.parse(e.target.result);
+                  statusText.textContent = "Progress: Restoring offline data...";
+                  
+                  chrome.runtime.sendMessage({ action: 'restoreLocal', data: bookmarkData }, function(response) {
+                      if (response && response.success) {
+                          statusText.textContent = "Success: Offline bookmarks restored!";
+                      } else {
+                          statusText.textContent = "Restore Error: " + (response ? response.error : "Failed");
+                      }
+                      fileImport.value = ''; 
+                  });
+              } catch (error) {
+                  statusText.textContent = "Error: Invalid JSON file format.";
+                  fileImport.value = ''; 
+              }
+          };
+          reader.readAsText(file);
+      });
+  }
+});
