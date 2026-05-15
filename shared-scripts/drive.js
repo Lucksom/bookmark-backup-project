@@ -1,6 +1,6 @@
 const Drive = {
     API_BASE: 'https://www.googleapis.com/drive/v3',
-    UPLOAD_BASE: 'https://www.googleapis.com/upload/drive/v3', // Corrected upload endpoint
+    UPLOAD_BASE: 'https://www.googleapis.com/upload/drive/v3',
     BACKUP_FOLDER_NAME: 'ChromeBookmarkBackups',
     BACKUP_FILE_PREFIX: 'bookmarks-backup-',
 
@@ -42,20 +42,28 @@ const Drive = {
         return data.files.length > 0 ? data.files[0].id : null;
     },
 
-    uploadBackup: async (bookmarkData) => {
+    uploadBackup: async (localBookmarkData) => {
         const token = await Auth.getToken();
         if (!token) throw new Error('Not authenticated');
 
         const folderId = await Drive.ensureBackupFolder();
+        let finalDataToUpload = localBookmarkData;
+        let oldFiles = [];
 
-        // Clear existing backups to maintain only the latest one
+        // NEW: Check for existing backups and merge them!
         try {
-            const oldFiles = await Drive.listBackups();
-            for (const file of oldFiles) {
-                await Drive.deleteBackup(file.id);
+            oldFiles = await Drive.listBackups();
+            if (oldFiles.length > 0) {
+                console.log("Found existing backup. Downloading to merge...");
+                // Grab the most recent backup file from Drive
+                const remoteData = await Drive.downloadBackup(oldFiles[0].id);
+                
+                // Merge the local device bookmarks into the remote master file
+                finalDataToUpload = Bookmarks.mergeTrees(remoteData, localBookmarkData);
+                console.log("Merge successful!");
             }
         } catch (error) {
-            console.log("No old files to clear.");
+            console.log("No existing files to merge, starting fresh.");
         }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -70,9 +78,8 @@ const Drive = {
             delimiter + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
             JSON.stringify(metadata) +
             delimiter + 'Content-Type: application/json\r\n\r\n' +
-            JSON.stringify(bookmarkData) + closeDelimiter;
+            JSON.stringify(finalDataToUpload) + closeDelimiter; // Upload the MERGED data
 
-        // Use the specific /upload/ endpoint required by Google
         const response = await fetch(`${Drive.UPLOAD_BASE}/files?uploadType=multipart&supportsAllDrives=true`, {
             method: 'POST',
             headers: {
@@ -82,16 +89,26 @@ const Drive = {
             body: body
         });
 
-        // Fixed error handling to show EXACT reason
         if (!response.ok) {
             if (response.status === 401) {
-                await Auth.logout(); // Erase the expired token
+                await Auth.logout();
                 throw new Error("Session expired. Please click Login again.");
             }
             const errData = await response.json();
             throw new Error(errData.error?.message || "Google API rejected the upload");
         }
+        
         const data = await response.json();
+
+        // AFTER successful upload of the new master file, delete the old ones
+        for (const file of oldFiles) {
+            try {
+                await Drive.deleteBackup(file.id);
+            } catch (e) {
+                console.error("Could not delete old file", e);
+            }
+        }
+
         return data.id;
     },
 
