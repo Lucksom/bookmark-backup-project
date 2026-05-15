@@ -1,5 +1,4 @@
 const Auth = {
-
     getRedirectURL: () => {
         return chrome.identity.getRedirectURL();
     },
@@ -11,6 +10,9 @@ const Auth = {
             const scopes = manifest.oauth2.scopes.join(' ');
             const redirectUri = Auth.getRedirectURL();
 
+            // This will tell us EXACTLY what URL Kiwi is generating
+            console.log("Kiwi Redirect URI:", redirectUri); 
+
             const authUrl = `https://accounts.google.com/o/oauth2/auth` +
                             `?client_id=${clientId}` +
                             `&response_type=token` +
@@ -21,9 +23,11 @@ const Auth = {
                 url: authUrl,
                 interactive: true
             }, (redirectUrl) => {
+                // Fixed to extract the actual readable error message
                 if (chrome.runtime.lastError || !redirectUrl) {
-                    console.error("Auth failed:", chrome.runtime.lastError);
-                    return resolve({ success: false });
+                    const errorMsg = chrome.runtime.lastError ? chrome.runtime.lastError.message : "No redirect URL returned";
+                    console.error("Auth failed details:", errorMsg);
+                    return resolve({ success: false, error: errorMsg });
                 }
 
                 const url = new URL(redirectUrl);
@@ -31,12 +35,11 @@ const Auth = {
                 const token = params.get('access_token');
 
                 if (token) {
-
                     chrome.storage.local.set({ 'drive_token': token }, () => {
                         resolve({ success: true, token: token });
                     });
                 } else {
-                    resolve({ success: false });
+                    resolve({ success: false, error: "No token found in URL" });
                 }
             });
         });
@@ -50,7 +53,6 @@ const Auth = {
         });
     },
 
-    // 3. Logout / Clear token
     logout: () => {
         return new Promise((resolve) => {
             chrome.storage.local.remove(['drive_token'], () => {
