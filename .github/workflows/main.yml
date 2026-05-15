@@ -1,5 +1,4 @@
 name: Build and Sign Extension
-
 on: [push]
 
 jobs:
@@ -8,31 +7,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Build & Sign Extension
+      - name: Build Extension
         env:
-          EXTENSION_KEY: ${{ secrets.EXTENSION_KEY }}
+          MY_KEY: ${{ secrets.EXTENSION_KEY }}
         run: |
-          if [ -n "$EXTENSION_KEY" ]; then
-            printf '%s\n' "$EXTENSION_KEY" > key.pem
-            dos2unix key.pem 2>/dev/null || true
-          else
-            openssl genrsa -out key.pem 2048
-          fi
-          
-          npx crx3 pack . -p key.pem -o extension.crx   # Modern crx3 tool
-          
+          cat <<EOF > key.pem
+          $MY_KEY
+          EOF
+          npx crx pack . -p key.pem -o extension.crx
           zip -r extension.zip . -x "*.git*" ".github*" "key.pem"
+          rm key.pem
 
-      - name: Upload Artifacts
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: extension-build
+          name: signed-extension
           path: |
             extension.crx
             extension.zip
-            key.pem
