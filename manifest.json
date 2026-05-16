@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bookmark Cloud Backup",
-  "version": "1.0",
+  "version": "1.43",
   "description": "Backup and restore bookmarks to Google Drive or offline files.",
   "permissions": [
     "bookmarks",
