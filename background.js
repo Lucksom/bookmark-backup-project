@@ -21,7 +21,6 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     }
 });
 
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   if (request.action === 'login') {
@@ -38,13 +37,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; 
   }
 
-  // NEW: Securely logout by stripping tokens
   if (request.action === 'logout') {
       chrome.storage.local.remove(['drive_token'], () => {
           chrome.identity.clearAllCachedAuthTokens(() => {
               sendResponse({ success: true });
           });
       });
+      return true;
+  }
+
+  // NEW: Fetch actual Google Profile Picture and Email
+  if (request.action === 'getUserInfo') {
+      Auth.getToken().then(token => {
+          if (!token) throw new Error("Not authenticated");
+          return fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { 'Authorization': `Bearer ${token}` }
+          });
+      })
+      .then(res => res.json())
+      .then(data => sendResponse({ success: true, info: data }))
+      .catch(err => sendResponse({ success: false, error: err.message }));
       return true;
   }
 
