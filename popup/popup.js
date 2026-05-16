@@ -56,54 +56,57 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setConnectedUI() {
-      btnLogin.style.display = "none"; // Hide login button
-      topBar.style.display = "flex"; // Show profile header
+      btnLogin.style.display = "none"; 
+      topBar.style.display = "flex"; 
       btnBackup.disabled = false;
 
-      // Try to fetch email from Chrome Identity
-      chrome.identity.getProfileUserInfo(function(userInfo) {
-          if (userInfo && userInfo.email) {
-              userEmail.textContent = userInfo.email;
-              userDp.textContent = userInfo.email.charAt(0).toUpperCase();
+      // NEW: Fetch real profile info from background script
+      chrome.runtime.sendMessage({ action: 'getUserInfo' }, function(response) {
+          if (response && response.success && response.info) {
+              if (response.info.email) {
+                  userEmail.textContent = response.info.email;
+              }
+              if (response.info.picture) {
+                  // Inject the actual Google Image
+                  userDp.innerHTML = `<img src="${response.info.picture}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                  userDp.style.backgroundColor = "transparent";
+              } else if (response.info.email) {
+                  // Fallback to letter if no picture exists
+                  userDp.textContent = response.info.email.charAt(0).toUpperCase();
+              }
           }
       });
 
       fetchBackupsList();
   }
 
-  // --- NEW HEADER LOGIC ---
-  
-  // Refresh Button Logic
   btnRefresh.addEventListener('click', function() {
-      // Add a tiny spinning animation to the icon for feedback
       btnRefresh.style.transform = "rotate(360deg)";
       setTimeout(() => btnRefresh.style.transform = "rotate(0deg)", 300);
       fetchBackupsList();
   });
 
-  // Toggle Logout Menu
   userDp.addEventListener('click', function() {
       logoutMenu.style.display = logoutMenu.style.display === "none" ? "block" : "none";
   });
 
-  // Execute Logout
   btnLogoutConfirm.addEventListener('click', function() {
       logoutMenu.style.display = "none";
       statusText.textContent = "Logging out...";
       
       chrome.runtime.sendMessage({ action: 'logout' }, function() {
-          // Reset the UI to disconnected state
           topBar.style.display = "none";
           btnLogin.style.display = "flex";
           btnLogin.textContent = "Login with Google";
           backupList.style.display = "none";
           manageGroup.style.display = "none";
           btnBackup.disabled = true;
+          // Reset DP just in case
+          userDp.innerHTML = "👤";
+          userDp.style.backgroundColor = "var(--primary)";
           statusText.textContent = "Logged out successfully.";
       });
   });
-
-  // --- EXISTING LOGIC ---
 
   if (btnLogin) {
     btnLogin.addEventListener('click', function() {
