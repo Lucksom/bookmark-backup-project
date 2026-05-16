@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', function() {
   const btnLogin = document.getElementById('btn-login');
+  const topBar = document.getElementById('top-bar');
+  const userDp = document.getElementById('user-dp');
+  const userEmail = document.getElementById('user-email');
+  const logoutMenu = document.getElementById('logout-menu');
+  const btnLogoutConfirm = document.getElementById('btn-logout-confirm');
+  const btnRefresh = document.getElementById('btn-refresh');
+
   const btnBackup = document.getElementById('btn-backup-drive');
   const backupOptions = document.getElementById('backup-options');
   const btnBackupMerge = document.getElementById('btn-backup-merge');
@@ -20,15 +27,13 @@ document.addEventListener('DOMContentLoaded', function() {
           setConnectedUI();
       } else {
           statusText.textContent = "Not logged in";
+          topBar.style.display = "none";
+          btnLogin.style.display = "flex";
       }
   });
 
-  function setConnectedUI() {
-      btnLogin.textContent = "Connected to Google";
-      btnLogin.style.backgroundColor = "#2e7d32"; 
-      btnBackup.disabled = false;
+  function fetchBackupsList() {
       statusText.textContent = "Fetching available backups...";
-
       chrome.runtime.sendMessage({ action: 'listBackups' }, function(response) {
           if (response && response.success && response.files && response.files.length > 0) {
               statusText.textContent = "Ready (Auto-backup every 6h)";
@@ -50,11 +55,59 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
+  function setConnectedUI() {
+      btnLogin.style.display = "none"; // Hide login button
+      topBar.style.display = "flex"; // Show profile header
+      btnBackup.disabled = false;
+
+      // Try to fetch email from Chrome Identity
+      chrome.identity.getProfileUserInfo(function(userInfo) {
+          if (userInfo && userInfo.email) {
+              userEmail.textContent = userInfo.email;
+              userDp.textContent = userInfo.email.charAt(0).toUpperCase();
+          }
+      });
+
+      fetchBackupsList();
+  }
+
+  // --- NEW HEADER LOGIC ---
+  
+  // Refresh Button Logic
+  btnRefresh.addEventListener('click', function() {
+      // Add a tiny spinning animation to the icon for feedback
+      btnRefresh.style.transform = "rotate(360deg)";
+      setTimeout(() => btnRefresh.style.transform = "rotate(0deg)", 300);
+      fetchBackupsList();
+  });
+
+  // Toggle Logout Menu
+  userDp.addEventListener('click', function() {
+      logoutMenu.style.display = logoutMenu.style.display === "none" ? "block" : "none";
+  });
+
+  // Execute Logout
+  btnLogoutConfirm.addEventListener('click', function() {
+      logoutMenu.style.display = "none";
+      statusText.textContent = "Logging out...";
+      
+      chrome.runtime.sendMessage({ action: 'logout' }, function() {
+          // Reset the UI to disconnected state
+          topBar.style.display = "none";
+          btnLogin.style.display = "flex";
+          btnLogin.textContent = "Login with Google";
+          backupList.style.display = "none";
+          manageGroup.style.display = "none";
+          btnBackup.disabled = true;
+          statusText.textContent = "Logged out successfully.";
+      });
+  });
+
+  // --- EXISTING LOGIC ---
+
   if (btnLogin) {
     btnLogin.addEventListener('click', function() {
-      if (btnLogin.textContent === "Connected to Google") return;
       statusText.textContent = "Opening Google Login...";
-
       chrome.runtime.sendMessage({ action: 'login' }, function(response) {
         if (response && response.success) {
             setConnectedUI();
@@ -65,18 +118,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // NEW: Toggle Backup Options Menu
   if (btnBackup) {
       btnBackup.addEventListener('click', function() {
-          if (backupOptions.style.display === "none") {
-              backupOptions.style.display = "flex";
-          } else {
-              backupOptions.style.display = "none";
-          }
+          backupOptions.style.display = backupOptions.style.display === "none" ? "flex" : "none";
       });
   }
 
-  // NEW: Handle Merge vs Replace Backup
   function triggerBackup(mode) {
       statusText.textContent = `Progress: ${mode === 'merge' ? 'Updating' : 'Replacing'} Backup...`;
       btnBackup.disabled = true;
