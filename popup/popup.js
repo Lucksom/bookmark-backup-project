@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
   const btnLogin = document.getElementById('btn-login');
   const btnBackup = document.getElementById('btn-backup-drive');
+  const backupOptions = document.getElementById('backup-options');
+  const btnBackupMerge = document.getElementById('btn-backup-merge');
+  const btnBackupReplace = document.getElementById('btn-backup-replace');
+  
   const btnRestore = document.getElementById('btn-restore-drive');
   const btnDelete = document.getElementById('btn-delete-drive');
   const statusText = document.getElementById('status-text');
@@ -27,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       chrome.runtime.sendMessage({ action: 'listBackups' }, function(response) {
           if (response && response.success && response.files && response.files.length > 0) {
-              statusText.textContent = "Ready";
+              statusText.textContent = "Ready (Auto-backup every 6h)";
               backupList.style.display = "block";
               manageGroup.style.display = "flex";
               backupList.innerHTML = '';
@@ -39,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   backupList.appendChild(opt);
               });
           } else {
-              statusText.textContent = "No backups found in Drive.";
+              statusText.textContent = "No backups found. Ready to create one.";
               backupList.style.display = "none";
               manageGroup.style.display = "none";
           }
@@ -61,22 +65,36 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // NEW: Toggle Backup Options Menu
   if (btnBackup) {
       btnBackup.addEventListener('click', function() {
-          statusText.textContent = "Progress: Preparing & Uploading...";
-          btnBackup.disabled = true;
-          
-          chrome.runtime.sendMessage({ action: 'startBackup' }, function(response) {
-              if (response && response.success) {
-                  statusText.textContent = "Success: Backup saved to Drive!";
-                  setConnectedUI(); 
-              } else {
-                  statusText.textContent = "Error: " + (response ? response.error : "Failed");
-                  btnBackup.disabled = false;
-              }
-          });
+          if (backupOptions.style.display === "none") {
+              backupOptions.style.display = "flex";
+          } else {
+              backupOptions.style.display = "none";
+          }
       });
   }
+
+  // NEW: Handle Merge vs Replace Backup
+  function triggerBackup(mode) {
+      statusText.textContent = `Progress: ${mode === 'merge' ? 'Updating' : 'Replacing'} Backup...`;
+      btnBackup.disabled = true;
+      backupOptions.style.display = "none";
+      
+      chrome.runtime.sendMessage({ action: 'startBackup', mode: mode }, function(response) {
+          if (response && response.success) {
+              statusText.textContent = "Success: Backup saved to Drive!";
+              setConnectedUI(); 
+          } else {
+              statusText.textContent = "Error: " + (response ? response.error : "Failed");
+              btnBackup.disabled = false;
+          }
+      });
+  }
+
+  btnBackupMerge.addEventListener('click', () => triggerBackup('merge'));
+  btnBackupReplace.addEventListener('click', () => triggerBackup('replace'));
 
   if (btnRestore) {
       btnRestore.addEventListener('click', function() {
@@ -89,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           chrome.runtime.sendMessage({ action: 'restoreBackup', fileId: fileId }, function(response) {
               if (response && response.success) {
-                  statusText.textContent = "Success: Bookmarks restored!";
+                  statusText.textContent = "Success: Bookmarks restored natively!";
               } else {
                   statusText.textContent = "Restore Error: " + (response ? response.error : "Failed");
               }
@@ -124,7 +142,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  // FIXED: Mobile-Friendly Offline Export
   if (btnExport) {
       btnExport.addEventListener('click', function() {
           statusText.textContent = "Progress: Exporting offline...";
@@ -135,7 +152,6 @@ document.addEventListener('DOMContentLoaded', function() {
                   const url = URL.createObjectURL(blob);
                   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
                   
-                  // Use native HTML5 download (bypasses mobile extension API limits)
                   const a = document.createElement('a');
                   a.style.display = 'none';
                   a.href = url;
@@ -156,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  // Offline Import Logic
   if (btnImport && fileImport) {
       btnImport.addEventListener('click', function() {
           fileImport.click(); 
