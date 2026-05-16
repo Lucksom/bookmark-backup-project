@@ -42,7 +42,8 @@ const Drive = {
         return data.files.length > 0 ? data.files[0].id : null;
     },
 
-    uploadBackup: async (localBookmarkData) => {
+    // NEW: Accepts a 'mode' parameter (either 'merge' or 'replace')
+    uploadBackup: async (localBookmarkData, mode = 'merge') => {
         const token = await Auth.getToken();
         if (!token) throw new Error('Not authenticated');
 
@@ -50,20 +51,20 @@ const Drive = {
         let finalDataToUpload = localBookmarkData;
         let oldFiles = [];
 
-        // NEW: Check for existing backups and merge them!
         try {
             oldFiles = await Drive.listBackups();
             if (oldFiles.length > 0) {
-                console.log("Found existing backup. Downloading to merge...");
-                // Grab the most recent backup file from Drive
-                const remoteData = await Drive.downloadBackup(oldFiles[0].id);
-                
-                // Merge the local device bookmarks into the remote master file
-                finalDataToUpload = Bookmarks.mergeTrees(remoteData, localBookmarkData);
-                console.log("Merge successful!");
+                if (mode === 'merge') {
+                    console.log("Merge Mode: Downloading to merge...");
+                    const remoteData = await Drive.downloadBackup(oldFiles[0].id);
+                    finalDataToUpload = Bookmarks.mergeTrees(remoteData, localBookmarkData);
+                    console.log("Merge successful!");
+                } else {
+                    console.log("Replace Mode: Skipping merge. Overwriting old backup.");
+                }
             }
         } catch (error) {
-            console.log("No existing files to merge, starting fresh.");
+            console.log("No existing files, starting fresh.");
         }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -78,7 +79,7 @@ const Drive = {
             delimiter + 'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
             JSON.stringify(metadata) +
             delimiter + 'Content-Type: application/json\r\n\r\n' +
-            JSON.stringify(finalDataToUpload) + closeDelimiter; // Upload the MERGED data
+            JSON.stringify(finalDataToUpload) + closeDelimiter; 
 
         const response = await fetch(`${Drive.UPLOAD_BASE}/files?uploadType=multipart&supportsAllDrives=true`, {
             method: 'POST',
@@ -100,7 +101,6 @@ const Drive = {
         
         const data = await response.json();
 
-        // AFTER successful upload of the new master file, delete the old ones
         for (const file of oldFiles) {
             try {
                 await Drive.deleteBackup(file.id);
