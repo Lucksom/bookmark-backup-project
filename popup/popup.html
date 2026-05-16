@@ -55,12 +55,39 @@
         .material-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         hr { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0; width: 100%; }
         #manage-group, #backup-options { display: flex; gap: 8px; width: 100%; }
+        
+        /* NEW: Profile & Refresh Header */
+        #top-bar {
+            display: none; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 16px; 
+            background: rgba(255,255,255,0.7); 
+            padding: 8px 12px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.8);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Bookmark Cloud</h1>
+            <div id="top-bar">
+                <div style="display: flex; align-items: center; gap: 10px; position: relative;">
+                    <div id="user-dp" style="width: 36px; height: 36px; border-radius: 50%; background-color: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; user-select: none;">👤</div>
+                    <div style="display: flex; flex-direction: column; line-height: 1.2; text-align: left;">
+                        <span id="user-email" style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Connected</span>
+                    </div>
+                    
+                    <div id="logout-menu" style="display: none; position: absolute; top: 44px; left: 0; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 8px; border: 1px solid rgba(0,0,0,0.1); z-index: 10;">
+                        <button id="btn-logout-confirm" style="background: #fee2e2; color: #991b1b; border: none; padding: 6px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; width: 100%;">Logout</button>
+                    </div>
+                </div>
+                
+                <button id="btn-refresh" style="background: white; border: 1px solid #e5e7eb; border-radius: 50%; width: 36px; height: 36px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" title="Refresh Backups">🔄</button>
+            </div>
+            
+            <h1 id="main-title">Bookmark Cloud</h1>
             <p class="status" id="status-text">Checking status...</p>
         </header>
         
