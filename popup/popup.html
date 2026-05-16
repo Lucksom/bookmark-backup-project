@@ -54,7 +54,7 @@
         .material-btn.primary { background: var(--primary); color: white; border: none; }
         .material-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         hr { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0; width: 100%; }
-        #manage-group { display: flex; gap: 8px; width: 100%; }
+        #manage-group, #backup-options { display: flex; gap: 8px; width: 100%; }
     </style>
 </head>
 <body>
@@ -67,6 +67,11 @@
         <div class="action-grid">
             <button id="btn-login" class="material-btn primary">Login with Google</button>
             <button id="btn-backup-drive" class="material-btn" disabled>Backup to Drive</button>
+            
+            <div id="backup-options" style="display: none; margin-top: -4px;">
+                <button id="btn-backup-merge" class="material-btn" style="background-color: #e0f2fe; color: #0284c7; border: 1px solid #7dd3fc; font-size: 0.8rem; padding: 0;">Update (Merge)</button>
+                <button id="btn-backup-replace" class="material-btn" style="background-color: #ffedd5; color: #c2410c; border: 1px solid #fdba74; font-size: 0.8rem; padding: 0;">Replace</button>
+            </div>
             
             <hr>
             
